@@ -514,7 +514,6 @@ blockquote {
     display: block;
     transition: 0.3s ease;
 }
-}
 
 .personality-gallery img:hover {
     transform: scale(1.02);
