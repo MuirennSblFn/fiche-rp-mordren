@@ -414,17 +414,98 @@
 
                     <div class="stat-card">
                         <span class="stat-label">Attaque</span>
-                        <span class="stat-value">80</span>
+                        <span class="stat-value">14</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Défense</span>
-                        <span class="stat-value">70</span>
+                        <span class="stat-value">10</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Constitution</span>
-                        <span class="stat-value">50</span>
+                        <span class="stat-value">16</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card combat-sim-card">
+
+                <h2>Simulateur de combat</h2>
+
+                <p class="combat-sim-intro">
+                    Entrez les statistiques de deux combattants pour lancer une simulation
+                    basée sur le système de résolution (ATT / DEF / CON, jets de dés et paliers de dégâts).
+                </p>
+
+                <div class="fighters-grid">
+
+                    <div class="fighter-panel">
+
+                        <input class="fighter-name" id="f1-name" type="text" value="Combattant A" maxlength="30" />
+
+                        <div class="fighter-stats">
+
+                            <label>ATT <input type="number" id="f1-att" value="25" min="1" max="100"></label>
+                            <label>DEF <input type="number" id="f1-def" value="20" min="1" max="100"></label>
+                            <label>CON <input type="number" id="f1-con" value="30" min="1" max="100"></label>
+
+                        </div>
+
+                    </div>
+
+                    <div class="vs-divider">VS</div>
+
+                    <div class="fighter-panel">
+
+                        <input class="fighter-name" id="f2-name" type="text" value="Combattant B" maxlength="30" />
+
+                        <div class="fighter-stats">
+
+                            <label>ATT <input type="number" id="f2-att" value="22" min="1" max="100"></label>
+                            <label>DEF <input type="number" id="f2-def" value="25" min="1" max="100"></label>
+                            <label>CON <input type="number" id="f2-con" value="28" min="1" max="100"></label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <button class="combat-btn" id="startCombatBtn">Lancer le combat</button>
+
+                <div class="initiative-section">
+
+                    <h3>Jet d'initiative</h3>
+
+                    <div class="initiative-grid" id="initiativeGrid">
+
+                        <div class="initiative-card">
+                            <span class="initiative-name">—</span>
+                            <span class="initiative-die">D?</span>
+                            <span class="initiative-roll">?</span>
+                        </div>
+
+                        <div class="initiative-vs">◆</div>
+
+                        <div class="initiative-card">
+                            <span class="initiative-name">—</span>
+                            <span class="initiative-die">D?</span>
+                            <span class="initiative-roll">?</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="combat-log-wrapper">
+
+                    <h3>Journal de combat</h3>
+
+                    <div class="combat-log" id="combatLog">
+                        <p class="log-placeholder">Le journal de combat s'affichera ici une fois le duel lancé...</p>
                     </div>
 
                 </div>
@@ -497,6 +578,260 @@
             });
 
         });
+
+        /* ===================================================== */
+        /* SIMULATEUR DE COMBAT */
+        /* ===================================================== */
+
+        // Palier de dé selon la valeur de la statistique utilisée pour le jet (1-9 -> D10, 10-19 -> D20, ... 90-100 -> D100)
+        function dieForStat(value) {
+            const v = Math.max(1, Math.min(100, Math.round(value)));
+            if (v <= 9) return 10;
+            if (v <= 19) return 20;
+            if (v <= 29) return 30;
+            if (v <= 39) return 40;
+            if (v <= 49) return 50;
+            if (v <= 59) return 60;
+            if (v <= 69) return 70;
+            if (v <= 79) return 80;
+            if (v <= 89) return 90;
+            return 100;
+        }
+
+        function rollDie(faces) {
+            return Math.floor(Math.random() * faces) + 1;
+        }
+
+        // Paliers de dégâts selon l'écart entre le total d'attaque et le total de défense
+        function damageForDiff(diff) {
+            if (diff < 5) return 2;       // petite différence
+            if (diff < 10) return 5;      // moyenne (5-9)
+            if (diff < 15) return 10;     // grande (10-14)
+            if (diff < 20) return 15;     // énorme (15-19)
+            return diff;                  // monstrueuse (20+) : dégâts = écart réel
+        }
+
+        function makeFighter(prefix, fallbackName) {
+            const readStat = (id, fallback) => {
+                const el = document.getElementById(id);
+                const n = parseInt(el.value, 10);
+                return Number.isFinite(n) && n > 0 ? Math.min(n, 100) : fallback;
+            };
+
+            const nameEl = document.getElementById(prefix + '-name');
+            const name = (nameEl.value || '').trim() || fallbackName;
+
+            const att = readStat(prefix + '-att', 10);
+            const def = readStat(prefix + '-def', 10);
+            const con = readStat(prefix + '-con', 10);
+
+            return { name, att, def, con, pv: con, maxPv: con };
+        }
+
+        // Initiative : chaque combattant lance un dé dont la valeur maximale est
+        // le total de ses statistiques (ATT + DEF + CON). Le plus haut jet commence.
+        function rollInitiative(fighter) {
+            const total = fighter.att + fighter.def + fighter.con;
+            const roll = rollDie(total);
+            return { die: total, roll, total };
+        }
+
+        function resolveExchange(log, attacker, defender) {
+            // Jet d'attaque
+            const atkDie = dieForStat(attacker.att);
+            const atkRoll = rollDie(atkDie);
+            const atkTotal = attacker.att + atkRoll;
+
+            // Jet de défense
+            const defDie = dieForStat(defender.def);
+            const defRoll = rollDie(defDie);
+            const defTotal = defender.def + defRoll;
+
+            log.action(`${attacker.name} attaque ${defender.name}. Jet ATT : D${atkDie} = ${atkRoll} + ATT ${attacker.att} = ${atkTotal}.`);
+            log.action(`${defender.name} se défend. Jet DEF : D${defDie} = ${defRoll} + DEF ${defender.def} = ${defTotal}.`);
+
+            if (atkTotal > defTotal) {
+                const diff = atkTotal - defTotal;
+                const dmg = damageForDiff(diff);
+                defender.pv = Math.max(0, defender.pv - dmg);
+                log.damage(`${attacker.name} touche ! Écart de ${diff} → ${defender.name} perd ${dmg} PV. (${defender.name} : ${defender.pv}/${defender.maxPv} PV)`);
+                return { hit: true, defenderDown: defender.pv <= 0 };
+            }
+
+            log.action(`${defender.name} esquive/pare l'attaque de ${attacker.name} (${defTotal} ≥ ${atkTotal}).`);
+
+            // Riposte : le défenseur qui a réussi sa défense peut immédiatement contre-attaquer
+            log.action(`Riposte de ${defender.name} !`);
+
+            const ripAtkDie = dieForStat(defender.att);
+            const ripAtkRoll = rollDie(ripAtkDie);
+            const ripAtkTotal = defender.att + ripAtkRoll;
+
+            const ripDefDie = dieForStat(attacker.def);
+            const ripDefRoll = rollDie(ripDefDie);
+            const ripDefTotal = attacker.def + ripDefRoll;
+
+            log.action(`${defender.name} contre-attaque. Jet ATT : D${ripAtkDie} = ${ripAtkRoll} + ATT ${defender.att} = ${ripAtkTotal}.`);
+            log.action(`${attacker.name} se défend. Jet DEF : D${ripDefDie} = ${ripDefRoll} + DEF ${attacker.def} = ${ripDefTotal}.`);
+
+            if (ripAtkTotal > ripDefTotal) {
+                const diff = ripAtkTotal - ripDefTotal;
+                const dmg = damageForDiff(diff);
+                attacker.pv = Math.max(0, attacker.pv - dmg);
+                log.damage(`La riposte touche ! Écart de ${diff} → ${attacker.name} perd ${dmg} PV. (${attacker.name} : ${attacker.pv}/${attacker.maxPv} PV)`);
+                return { hit: true, defenderDown: attacker.pv <= 0, riposte: true };
+            }
+
+            log.action(`${attacker.name} esquive/pare la riposte de ${defender.name}. Aucun dégât.`);
+            return { hit: false, defenderDown: false };
+        }
+
+        function renderInitiative(f1, init1, f2, init2, winner) {
+            const grid = document.getElementById('initiativeGrid');
+            if (!grid) return;
+
+            const buildCard = (fighter, init, isWinner) => {
+                const card = document.createElement('div');
+                card.className = 'initiative-card' + (isWinner ? ' is-winner' : '');
+
+                const name = document.createElement('span');
+                name.className = 'initiative-name';
+                name.textContent = fighter.name;
+
+                const die = document.createElement('span');
+                die.className = 'initiative-die';
+                die.textContent = `D${init.die}`;
+
+                const roll = document.createElement('span');
+                roll.className = 'initiative-roll';
+                roll.textContent = init.roll;
+
+                card.appendChild(name);
+                card.appendChild(die);
+                card.appendChild(roll);
+
+                if (isWinner) {
+                    const badge = document.createElement('span');
+                    badge.className = 'initiative-badge';
+                    badge.textContent = 'Commence';
+                    card.appendChild(badge);
+                }
+
+                return card;
+            };
+
+            grid.innerHTML = '';
+            grid.appendChild(buildCard(f1, init1, f1 === winner));
+
+            const vs = document.createElement('div');
+            vs.className = 'initiative-vs';
+            vs.textContent = '◆';
+            grid.appendChild(vs);
+
+            grid.appendChild(buildCard(f2, init2, f2 === winner));
+        }
+
+        function runCombat() {
+            const logEl = document.getElementById('combatLog');
+            logEl.innerHTML = '';
+
+            const log = {
+                round(text) {
+                    const p = document.createElement('p');
+                    p.className = 'log-round';
+                    p.textContent = text;
+                    logEl.appendChild(p);
+                },
+                action(text) {
+                    const p = document.createElement('p');
+                    p.className = 'log-action';
+                    p.textContent = text;
+                    logEl.appendChild(p);
+                },
+                damage(text) {
+                    const p = document.createElement('p');
+                    p.className = 'log-damage';
+                    p.textContent = text;
+                    logEl.appendChild(p);
+                },
+                victory(text) {
+                    const p = document.createElement('p');
+                    p.className = 'log-victory';
+                    p.textContent = text;
+                    logEl.appendChild(p);
+                }
+            };
+
+            const f1 = makeFighter('f1', 'Combattant A');
+            const f2 = makeFighter('f2', 'Combattant B');
+
+            let init1 = rollInitiative(f1);
+            let init2 = rollInitiative(f2);
+
+            // En cas d'égalité parfaite, on relance jusqu'à départager
+            let tieRolls = 0;
+            while (init1.roll === init2.roll && tieRolls < 10) {
+                init1 = rollInitiative(f1);
+                init2 = rollInitiative(f2);
+                tieRolls++;
+            }
+
+            const first = init1.roll >= init2.roll ? f1 : f2;
+            const second = first === f1 ? f2 : f1;
+
+            renderInitiative(f1, init1, f2, init2, first);
+
+            log.round(`Initiative — ${f1.name} : D${init1.die} → ${init1.roll} | ${f2.name} : D${init2.die} → ${init2.roll}`);
+            log.action(`${first.name} remporte l'initiative et ouvre le combat.`);
+
+            const MAX_ROUNDS = 30;
+            let round = 1;
+            let primary = first;
+            let other = second;
+            let winner = null;
+
+            while (round <= MAX_ROUNDS) {
+                log.round(`— Round ${round} —`);
+
+                const result = resolveExchange(log, primary, other);
+
+                if (primary.pv <= 0 || other.pv <= 0) {
+                    winner = primary.pv <= 0 ? other : primary;
+                    break;
+                }
+
+                // Le rôle d'attaquant principal alterne à chaque round
+                const tmp = primary;
+                primary = other;
+                other = tmp;
+
+                round++;
+            }
+
+            if (!winner) {
+                // Pas de KO après le nombre max de rounds : celui qui a le plus de PV restants (en %) l'emporte
+                const pct1 = f1.pv / f1.maxPv;
+                const pct2 = f2.pv / f2.maxPv;
+                log.round('Le combat s\'éternise... verdict aux points.');
+                if (pct1 === pct2) {
+                    log.victory(`Égalité parfaite entre ${f1.name} et ${f2.name} !`);
+                } else {
+                    winner = pct1 > pct2 ? f1 : f2;
+                }
+            }
+
+            if (winner) {
+                const loser = winner === f1 ? f2 : f1;
+                log.victory(`${winner.name} remporte le combat ! (${winner.pv}/${winner.maxPv} PV restants — ${loser.name} est vaincu)`);
+            }
+
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        const combatBtn = document.getElementById('startCombatBtn');
+        if (combatBtn) {
+            combatBtn.addEventListener('click', runCombat);
+        }
 
     </script>
 

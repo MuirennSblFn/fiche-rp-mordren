@@ -993,3 +993,533 @@ blockquote {
     }
 
 }
+
+/* ===================================================== */
+/* SIMULATEUR DE COMBAT */
+/* ===================================================== */
+
+.combat-sim-card{
+
+    margin-top:0;
+
+}
+
+.combat-sim-intro{
+
+    color:var(--muted);
+
+    max-width:850px;
+
+    margin-bottom:2.5rem;
+
+    line-height:1.9;
+
+}
+
+.fighters-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr auto 1fr;
+
+    gap:2rem;
+
+    align-items:center;
+
+    margin-bottom:2.5rem;
+
+}
+
+.fighter-panel{
+
+    background:rgba(255,255,255,.02);
+
+    border:1px solid var(--line);
+
+    border-radius:20px;
+
+    padding:1.8rem;
+
+    transition:.35s ease;
+
+}
+
+.fighter-panel:focus-within{
+
+    border-color:rgba(176,26,26,.4);
+
+}
+
+.fighter-name{
+
+    width:100%;
+
+    background:transparent;
+
+    border:none;
+
+    border-bottom:1px solid var(--line);
+
+    color:var(--gold);
+
+    font-family:'Cinzel',serif;
+
+    font-size:1.3rem;
+
+    letter-spacing:.5px;
+
+    padding:.4rem 0 .9rem;
+
+    margin-bottom:1.5rem;
+
+    outline:none;
+
+}
+
+.fighter-name:focus{
+
+    border-color:var(--gold);
+
+}
+
+.fighter-stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+
+    gap:1rem;
+
+}
+
+.fighter-stats label{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:.5rem;
+
+    color:var(--gold-soft);
+
+    text-transform:uppercase;
+
+    font-size:.72rem;
+
+    letter-spacing:2px;
+
+}
+
+.fighter-stats input{
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid var(--line);
+
+    border-radius:10px;
+
+    color:var(--text);
+
+    font-family:'Inter',sans-serif;
+
+    font-size:1rem;
+
+    padding:.6rem .7rem;
+
+    outline:none;
+
+    transition:.25s ease;
+
+}
+
+.fighter-stats input:focus{
+
+    border-color:rgba(176,26,26,.5);
+
+    background:rgba(176,26,26,.06);
+
+}
+
+.vs-divider{
+
+    font-family:'Cinzel',serif;
+
+    font-weight:700;
+
+    font-size:1.6rem;
+
+    color:var(--gold);
+
+    text-align:center;
+
+    text-shadow:0 0 20px rgba(176,26,26,.4);
+
+}
+
+.combat-btn{
+
+    display:block;
+
+    margin:0 auto 2.5rem;
+
+    padding:1rem 2.6rem;
+
+    background:rgba(176,26,26,.14);
+
+    border:1px solid rgba(176,26,26,.45);
+
+    border-radius:999px;
+
+    color:var(--text);
+
+    font-family:'Cinzel',serif;
+
+    font-size:1rem;
+
+    letter-spacing:1px;
+
+    cursor:pointer;
+
+    transition:.3s ease;
+
+}
+
+.combat-btn:hover{
+
+    background:rgba(176,26,26,.28);
+
+    border-color:var(--gold);
+
+    transform:translateY(-2px);
+
+    box-shadow:0 12px 30px rgba(0,0,0,.4);
+
+}
+
+.initiative-section{
+
+    margin-bottom:2.5rem;
+
+}
+
+.initiative-section h3{
+
+    color:var(--gold);
+
+    text-align:center;
+
+    margin-bottom:1.5rem;
+
+    font-size:1.1rem;
+
+    letter-spacing:1px;
+
+}
+
+.initiative-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr auto 1fr;
+
+    gap:1.5rem;
+
+    align-items:center;
+
+}
+
+.initiative-card{
+
+    position:relative;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:.6rem;
+
+    padding:1.8rem 1.5rem;
+
+    text-align:center;
+
+    background:rgba(255,255,255,.02);
+
+    border:1px solid var(--line);
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    transition:.4s ease;
+
+}
+
+.initiative-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:radial-gradient(circle at 50% 0%,
+        rgba(176,26,26,.14),
+        transparent 65%);
+
+    opacity:.5;
+
+    transition:.4s ease;
+
+}
+
+.initiative-name{
+
+    position:relative;
+
+    font-family:'Cinzel',serif;
+
+    color:var(--text);
+
+    font-size:1rem;
+
+    letter-spacing:.5px;
+
+}
+
+.initiative-die{
+
+    position:relative;
+
+    color:var(--muted);
+
+    text-transform:uppercase;
+
+    font-size:.72rem;
+
+    letter-spacing:2px;
+
+}
+
+.initiative-roll{
+
+    position:relative;
+
+    font-family:'Cinzel',serif;
+
+    font-weight:700;
+
+    font-size:2.4rem;
+
+    color:var(--gold-soft);
+
+    line-height:1;
+
+    transition:.4s ease;
+
+}
+
+.initiative-badge{
+
+    position:relative;
+
+    padding:.35rem .9rem;
+
+    border-radius:999px;
+
+    background:rgba(176,26,26,.16);
+
+    border:1px solid rgba(176,26,26,.4);
+
+    color:var(--gold-soft);
+
+    font-size:.65rem;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+}
+
+.initiative-card.is-winner{
+
+    border-color:rgba(176,26,26,.55);
+
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+
+    transform:translateY(-4px);
+
+}
+
+.initiative-card.is-winner::before{
+
+    opacity:1;
+
+}
+
+.initiative-card.is-winner .initiative-roll{
+
+    color:var(--gold);
+
+    text-shadow:0 0 30px rgba(176,26,26,.45);
+
+}
+
+.initiative-vs{
+
+    font-family:'Cinzel',serif;
+
+    color:var(--gold);
+
+    font-size:1.4rem;
+
+    text-align:center;
+
+    opacity:.7;
+
+}
+
+.combat-log-wrapper h3{
+
+    color:var(--gold);
+
+    margin-bottom:1.2rem;
+
+    font-size:1.2rem;
+
+}
+
+.combat-log{
+
+    max-height:420px;
+
+    overflow-y:auto;
+
+    background:rgba(0,0,0,.35);
+
+    border:1px solid var(--line);
+
+    border-radius:18px;
+
+    padding:1.8rem;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:.6rem;
+
+}
+
+.combat-log::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+.combat-log::-webkit-scrollbar-thumb{
+
+    background:rgba(176,26,26,.35);
+
+    border-radius:999px;
+
+}
+
+.log-placeholder{
+
+    color:var(--muted);
+
+    font-style:italic;
+
+}
+
+.log-round{
+
+    color:var(--gold);
+
+    font-family:'Cinzel',serif;
+
+    letter-spacing:.5px;
+
+    margin-top:.8rem;
+
+    padding-top:.8rem;
+
+    border-top:1px solid var(--line);
+
+}
+
+.log-round:first-child{
+
+    margin-top:0;
+
+    padding-top:0;
+
+    border-top:none;
+
+}
+
+.log-action{
+
+    color:var(--muted);
+
+    font-size:.95rem;
+
+    line-height:1.7;
+
+}
+
+.log-damage{
+
+    color:var(--gold-soft);
+
+    font-weight:600;
+
+    font-size:.95rem;
+
+    line-height:1.7;
+
+}
+
+.log-victory{
+
+    margin-top:1rem;
+
+    padding-top:1.2rem;
+
+    border-top:1px solid rgba(176,26,26,.3);
+
+    color:var(--gold);
+
+    font-family:'Cinzel',serif;
+
+    font-size:1.3rem;
+
+    text-align:center;
+
+    text-shadow:0 0 20px rgba(176,26,26,.4);
+
+}
+
+@media (max-width: 900px) {
+
+    .fighters-grid{
+        grid-template-columns:1fr;
+    }
+
+    .vs-divider{
+        padding:.5rem 0;
+    }
+
+    .initiative-grid{
+        grid-template-columns:1fr;
+    }
+
+    .initiative-vs{
+        padding:.3rem 0;
+    }
+
+}
