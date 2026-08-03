@@ -838,9 +838,10 @@
                     break;
                 }
 
-                // Un attaquant qui touche directement garde la main au round suivant.
-                // Il ne cède l'initiative qu'en cas d'échec de son attaque, ou si le
-                // défenseur réussit sa riposte (auquel cas c'est lui qui a "touché").
+                // L'initiative ne change de camp que si le défenseur réussit sa riposte
+                // (il a alors "touché" à son tour). Dans tous les autres cas — l'attaquant
+                // touche, ou l'attaque ET la riposte échouent toutes les deux — l'attaquant
+                // principal garde la main, puisqu'il n'a jamais été touché.
                 if (result.riposte) {
                     const tmp = primary;
                     primary = other;
@@ -849,10 +850,7 @@
                 } else if (result.hit) {
                     log.action(`${primary.name} garde l'initiative après avoir touché.`);
                 } else {
-                    const tmp = primary;
-                    primary = other;
-                    other = tmp;
-                    log.action(`${primary.name} prend l'initiative après l'échec de l'attaque adverse.`);
+                    log.action(`${primary.name} garde l'initiative : ni l'attaque ni la riposte n'ont abouti.`);
                 }
 
                 round++;
