@@ -414,17 +414,17 @@
 
                     <div class="stat-card">
                         <span class="stat-label">Attaque</span>
-                        <span class="stat-value">80</span>
+                        <span class="stat-value">14</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Défense</span>
-                        <span class="stat-value">70</span>
+                        <span class="stat-value">10</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Constitution</span>
-                        <span class="stat-value">50</span>
+                        <span class="stat-value">16</span>
                     </div>
 
                 </div>
@@ -444,7 +444,7 @@
 
                     <div class="fighter-panel">
 
-                        <input class="fighter-name" id="f1-name" type="text" value="Combattant A" maxlength="30" />
+                        <input class="fighter-name" id="f1-name" type="text" placeholder="Nom du personnage" maxlength="30" />
 
                         <div class="fighter-stats">
 
@@ -460,7 +460,7 @@
 
                     <div class="fighter-panel">
 
-                        <input class="fighter-name" id="f2-name" type="text" value="Combattant B" maxlength="30" />
+                        <input class="fighter-name" id="f2-name" type="text" placeholder="Nom du personnage" maxlength="30" />
 
                         <div class="fighter-stats">
 
@@ -625,7 +625,27 @@
             const def = readStat(prefix + '-def', 10);
             const con = readStat(prefix + '-con', 10);
 
-            return { name, att, def, con, pv: con, maxPv: con };
+            // hitTaken sert à la règle du "sursaut" : le tout premier coup encaissé
+            // par un personnage ne peut jamais l'achever, il tombe à 1 PV à la place.
+            return { name, att, def, con, pv: con, maxPv: con, hitTaken: false };
+        }
+
+        // Applique des dégâts à un personnage en respectant la règle du sursaut :
+        // si c'est le tout premier coup qu'il encaisse dans le combat et qu'il devait
+        // le faire tomber à 0 PV ou moins, il tombe à 1 PV à la place (un round de plus doit être joué).
+        function applyDamage(target, dmg) {
+            const wouldBeKO = (target.pv - dmg) <= 0;
+            const reprieve = wouldBeKO && !target.hitTaken;
+
+            target.hitTaken = true;
+
+            if (reprieve) {
+                target.pv = 1;
+            } else {
+                target.pv = Math.max(0, target.pv - dmg);
+            }
+
+            return reprieve;
         }
 
         // Initiative : chaque combattant lance un dé dont la valeur maximale est
@@ -653,8 +673,14 @@
             if (atkTotal > defTotal) {
                 const diff = atkTotal - defTotal;
                 const dmg = damageForDiff(diff);
-                defender.pv = Math.max(0, defender.pv - dmg);
-                log.damage(`${attacker.name} touche ! Écart de ${diff} → ${defender.name} perd ${dmg} PV. (${defender.name} : ${defender.pv}/${defender.maxPv} PV)`);
+                const reprieve = applyDamage(defender, dmg);
+
+                if (reprieve) {
+                    log.reprieve(`⚡ ${attacker.name} touche de plein fouet ! Écart de ${diff} → ce coup aurait dû achever ${defender.name}, mais c'est le premier qu'il/elle encaisse : il/elle s'accroche à 1 PV ! Un round de plus doit être joué.`);
+                } else {
+                    log.damage(`${attacker.name} touche ! Écart de ${diff} → ${defender.name} perd ${dmg} PV. (${defender.name} : ${defender.pv}/${defender.maxPv} PV)`);
+                }
+
                 return { hit: true, defenderDown: defender.pv <= 0 };
             }
 
@@ -677,8 +703,14 @@
             if (ripAtkTotal > ripDefTotal) {
                 const diff = ripAtkTotal - ripDefTotal;
                 const dmg = damageForDiff(diff);
-                attacker.pv = Math.max(0, attacker.pv - dmg);
-                log.damage(`La riposte touche ! Écart de ${diff} → ${attacker.name} perd ${dmg} PV. (${attacker.name} : ${attacker.pv}/${attacker.maxPv} PV)`);
+                const reprieve = applyDamage(attacker, dmg);
+
+                if (reprieve) {
+                    log.reprieve(`⚡ La riposte touche de plein fouet ! Écart de ${diff} → ce coup aurait dû achever ${attacker.name}, mais c'est le premier qu'il/elle encaisse : il/elle s'accroche à 1 PV ! Un round de plus doit être joué.`);
+                } else {
+                    log.damage(`La riposte touche ! Écart de ${diff} → ${attacker.name} perd ${dmg} PV. (${attacker.name} : ${attacker.pv}/${attacker.maxPv} PV)`);
+                }
+
                 return { hit: true, defenderDown: attacker.pv <= 0, riposte: true };
             }
 
@@ -751,6 +783,12 @@
                 damage(text) {
                     const p = document.createElement('p');
                     p.className = 'log-damage';
+                    p.textContent = text;
+                    logEl.appendChild(p);
+                },
+                reprieve(text) {
+                    const p = document.createElement('p');
+                    p.className = 'log-reprieve';
                     p.textContent = text;
                     logEl.appendChild(p);
                 },
