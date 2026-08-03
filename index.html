@@ -414,17 +414,17 @@
 
                     <div class="stat-card">
                         <span class="stat-label">Attaque</span>
-                        <span class="stat-value">80</span>
+                        <span class="stat-value">14</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Défense</span>
-                        <span class="stat-value">70</span>
+                        <span class="stat-value">10</span>
                     </div>
 
                     <div class="stat-card">
                         <span class="stat-label">Constitution</span>
-                        <span class="stat-value">50</span>
+                        <span class="stat-value">16</span>
                     </div>
 
                 </div>
@@ -838,10 +838,22 @@
                     break;
                 }
 
-                // Le rôle d'attaquant principal alterne à chaque round
-                const tmp = primary;
-                primary = other;
-                other = tmp;
+                // Un attaquant qui touche directement garde la main au round suivant.
+                // Il ne cède l'initiative qu'en cas d'échec de son attaque, ou si le
+                // défenseur réussit sa riposte (auquel cas c'est lui qui a "touché").
+                if (result.riposte) {
+                    const tmp = primary;
+                    primary = other;
+                    other = tmp;
+                    log.action(`${primary.name} prend l'initiative grâce à sa riposte réussie.`);
+                } else if (result.hit) {
+                    log.action(`${primary.name} garde l'initiative après avoir touché.`);
+                } else {
+                    const tmp = primary;
+                    primary = other;
+                    other = tmp;
+                    log.action(`${primary.name} prend l'initiative après l'échec de l'attaque adverse.`);
+                }
 
                 round++;
             }
